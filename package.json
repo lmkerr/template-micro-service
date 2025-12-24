@@ -1,8 +1,9 @@
 {
-  "name": "microservice-template",
+  "name": "thing-service",
   "version": "1.0.0",
   "description": "Template for building serverless microservices with AWS Lambda and PostgreSQL",
   "scripts": {
+    "setup": "bash ./scripts/setup.sh",
     "build": "node ./scripts/esbuild.config.js",
     "tsc": "tsc --noEmit",
     "package": "pnpm run tsc && pnpm run build && pnpm run zip",

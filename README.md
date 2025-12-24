@@ -38,6 +38,7 @@ A template for building serverless microservices using AWS Lambda, API Gateway, 
 ├── scripts/
 │   ├── esbuild.config.js
 │   ├── scaffold-lambda.sh
+│   ├── setup.sh
 │   ├── update-readme-structure.mjs
 │   └── zip.config.js
 ├── src/
@@ -110,10 +111,41 @@ A template for building serverless microservices using AWS Lambda, API Gateway, 
 - AWS CLI configured
 - Terraform
 
-### Installation
+### Quick Start (Recommended)
+
+Run the interactive setup script to configure everything at once:
 
 ```bash
+pnpm setup
+# or
+./scripts/setup.sh
+```
+
+The setup script will:
+
+1. Prompt for your service name and AWS region
+2. Configure Terraform backend (S3 bucket and DynamoDB table names)
+3. Set up environment-specific values (account IDs, domains, hosted zones)
+4. Optionally create the S3 bucket and DynamoDB table for Terraform state
+5. Install dependencies and build the project
+6. Initialize Terraform
+
+### Manual Installation
+
+If you prefer to configure manually:
+
+```bash
+# Install dependencies
 pnpm install
+
+# Update infrastructure/main.tf with your Terraform backend settings
+# Update infrastructure/variables.tf with your service configuration
+
+# Initialize and deploy
+cd infrastructure
+terraform init
+terraform workspace select dev
+terraform apply
 ```
 
 ### Development
@@ -137,7 +169,8 @@ pnpm package
 
 # Deploy infrastructure
 cd infrastructure
-terraform init
+terraform workspace select dev  # or: sandbox, prod
+terraform plan
 terraform apply
 ```
 
