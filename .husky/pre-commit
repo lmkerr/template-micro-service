@@ -1,0 +1,8 @@
+# Update README with folder structure
+pnpm run update-readme
+
+# Stage README if it was modified
+git add README.md
+
+# Run tests
+pnpm test
