@@ -1,8 +1,8 @@
 # Lambda function
 resource "aws_lambda_function" "delete_thing_lambda" {
   filename         = "../dist/services/delete-thing/delete-thing.zip"
-  function_name    = "carousel-delete-thing"
-  role             = aws_iam_role.lambda_organization_execution_role.arn
+  function_name    = "${var.service_name}-delete-thing"
+  role             = aws_iam_role.lambda_execution_role.arn
   handler          = "delete-thing.handler"
   runtime          = local.node_runtime
   source_code_hash = filebase64sha256("../dist/services/delete-thing/delete-thing.zip")

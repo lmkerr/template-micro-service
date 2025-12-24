@@ -1,8 +1,8 @@
 # Lambda function
 resource "aws_lambda_function" "create_thing_lambda" {
   filename         = "../dist/services/create-thing/create-thing.zip"
-  function_name    = "carousel-create-thing"
-  role             = aws_iam_role.lambda_organization_execution_role.arn
+  function_name    = "${var.service_name}-create-thing"
+  role             = aws_iam_role.lambda_execution_role.arn
   handler          = "create-thing.handler"
   runtime          = local.node_runtime
   source_code_hash = filebase64sha256("../dist/services/create-thing/create-thing.zip")

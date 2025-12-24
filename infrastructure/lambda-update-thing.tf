@@ -1,8 +1,8 @@
 # Lambda function
 resource "aws_lambda_function" "update_thing_lambda" {
   filename         = "../dist/services/update-thing/update-thing.zip"
-  function_name    = "carousel-update-thing"
-  role             = aws_iam_role.lambda_organization_execution_role.arn
+  function_name    = "${var.service_name}-update-thing"
+  role             = aws_iam_role.lambda_execution_role.arn
   handler          = "update-thing.handler"
   runtime          = local.node_runtime
   source_code_hash = filebase64sha256("../dist/services/update-thing/update-thing.zip")

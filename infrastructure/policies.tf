@@ -1,5 +1,5 @@
-resource "aws_iam_role" "lambda_organization_execution_role" {
-  name = "carousel-org-lambda-execution-${terraform.workspace}"
+resource "aws_iam_role" "lambda_execution_role" {
+  name = "${var.service_name}-lambda-execution-${terraform.workspace}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -17,8 +17,8 @@ resource "aws_iam_role" "lambda_organization_execution_role" {
 
 # Data API permissions for PostgreSQL
 resource "aws_iam_role_policy" "lambda_data_api_policy" {
-  name = "carousel-lambda-data-api-policy"
-  role = aws_iam_role.lambda_organization_execution_role.id
+  name = "${var.service_name}-lambda-data-api-policy"
+  role = aws_iam_role.lambda_execution_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -59,7 +59,7 @@ resource "aws_iam_role_policy" "lambda_data_api_policy" {
 
 # CloudWatch logs policy
 resource "aws_iam_policy" "cloudwatch_logs_policy" {
-  name = "cloudwatch_organization_logs_policy_${terraform.workspace}"
+  name = "${var.service_name}-cloudwatch-logs-policy-${terraform.workspace}"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -77,27 +77,6 @@ resource "aws_iam_policy" "cloudwatch_logs_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "cloudwatch_logs_policy_attachment" {
-  role       = aws_iam_role.lambda_organization_execution_role.name
+  role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.cloudwatch_logs_policy.arn
-}
-
-# S3 permissions for uploading organization assets (logos)
-resource "aws_iam_role_policy" "lambda_s3_policy" {
-  name = "carousel-lambda-s3-policy-${terraform.workspace}"
-  role = aws_iam_role.lambda_organization_execution_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:DeleteObject"
-        ]
-        Resource = "${aws_s3_bucket.organization_assets.arn}/*"
-      }
-    ]
-  })
 }

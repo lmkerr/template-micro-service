@@ -1,15 +1,15 @@
 # Lambda function
-resource "aws_lambda_function" "get_things_lambda" {
-  filename         = "../dist/services/get-things/get-things.zip"
-  function_name    = "carousel-get-things"
-  role             = aws_iam_role.lambda_organization_execution_role.arn
-  handler          = "get-things.handler"
+resource "aws_lambda_function" "get_thing_lambda" {
+  filename         = "../dist/services/get-thing/get-thing.zip"
+  function_name    = "${var.service_name}-get-thing"
+  role             = aws_iam_role.lambda_execution_role.arn
+  handler          = "get-thing.handler"
   runtime          = local.node_runtime
-  source_code_hash = filebase64sha256("../dist/services/get-things/get-things.zip")
+  source_code_hash = filebase64sha256("../dist/services/get-thing/get-thing.zip")
 
   timeout = local.lambda_timeout
 
-  description = "Get Things Lambda Function"
+  description = "Get Thing Lambda Function"
   environment {
     variables = {
       # Database Data API variables
@@ -21,7 +21,7 @@ resource "aws_lambda_function" "get_things_lambda" {
 }
 
 # CloudWatch Log Group for Lambda function
-resource "aws_cloudwatch_log_group" "get_things_lambda_log_group" {
-  name              = "/aws/lambda/${aws_lambda_function.get_things_lambda.function_name}"
+resource "aws_cloudwatch_log_group" "get_thing_lambda_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.get_thing_lambda.function_name}"
   retention_in_days = 14
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Carousel Organization Service - Lambda Scaffolding Script
+# Microservice Template - Lambda Scaffolding Script
 # This script scaffolds a new Lambda function with all necessary files
 
 set -e
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║  Carousel Lambda Scaffolder                               ║${NC}"
+echo -e "${BLUE}║  Lambda Scaffolder                                        ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -47,7 +47,7 @@ echo -e "${GREEN}Project: $(basename "$PROJECT_ROOT")${NC}"
 echo ""
 
 # Prompt for lambda name
-echo -e "${YELLOW}Enter the lambda name (kebab-case, e.g., 'get-things', 'create-organization'):${NC}"
+echo -e "${YELLOW}Enter the lambda name (kebab-case, e.g., 'get-users', 'create-item'):${NC}"
 read -r LAMBDA_NAME
 
 # Validate input
@@ -106,7 +106,7 @@ if [[ "$ADD_ROUTE" =~ ^[Yy]$ ]]; then
     exit 1
   fi
 
-  echo -e "${YELLOW}Enter route path (e.g., '/organization/{organizationId}/things'):${NC}"
+  echo -e "${YELLOW}Enter route path (e.g., '/things', '/things/{id}'):${NC}"
   read -r ROUTE_PATH
 
   # Validate route path starts with /
@@ -158,7 +158,7 @@ if [[ "$ADD_ROUTE" =~ ^[Yy]$ ]]; then
     done <<< "$SIMILAR_ROUTES"
   fi
 
-  echo -e "${YELLOW}Enter route comment (optional, e.g., 'Get things for specific organization'):${NC}"
+  echo -e "${YELLOW}Enter route comment (optional, e.g., 'Get all things'):${NC}"
   read -r ROUTE_COMMENT
 
   echo ""
@@ -232,7 +232,10 @@ const ${CAMEL_CASE}Handler: APIGatewayProxyHandlerV2 = async (
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: '$TITLE_CASE endpoint',
+        success: true,
+        data: {
+          message: '$TITLE_CASE endpoint',
+        },
       }),
     };
   } catch (error) {
@@ -241,8 +244,11 @@ const ${CAMEL_CASE}Handler: APIGatewayProxyHandlerV2 = async (
     return {
       statusCode: 500,
       body: JSON.stringify({
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        },
       }),
     };
   }
@@ -251,14 +257,101 @@ const ${CAMEL_CASE}Handler: APIGatewayProxyHandlerV2 = async (
 export { ${CAMEL_CASE}Handler };
 EOF
 
+# Create handler test file
+echo -e "${GREEN}✓${NC} Creating handler test..."
+cat > "$PROJECT_ROOT/src/services/$LAMBDA_NAME/$LAMBDA_NAME.handler.test.ts" << EOF
+import { handler } from './$LAMBDA_NAME.handler';
+
+jest.mock('../../middleware/middy/middy.middleware', () => ({
+  handlerMiddleware: jest.fn((fn) => fn),
+}));
+
+jest.mock('./$LAMBDA_NAME', () => ({
+  ${CAMEL_CASE}Handler: jest.fn(),
+}));
+
+describe('$LAMBDA_NAME.handler', () => {
+  it('should export a handler wrapped with middleware', () => {
+    expect(handler).toBeDefined();
+    expect(typeof handler).toBe('function');
+  });
+});
+EOF
+
+# Create service test file
+echo -e "${GREEN}✓${NC} Creating service test..."
+cat > "$PROJECT_ROOT/src/services/$LAMBDA_NAME/$LAMBDA_NAME.test.ts" << EOF
+import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
+
+const mockSend = jest.fn();
+
+jest.mock('@aws-sdk/client-rds-data', () => ({
+  RDSDataClient: jest.fn().mockImplementation(() => ({
+    send: (...args: unknown[]) => mockSend(...args),
+  })),
+  ExecuteStatementCommand: jest.fn().mockImplementation((params) => params),
+}));
+
+import { ${CAMEL_CASE}Handler } from './$LAMBDA_NAME';
+
+const handler = ${CAMEL_CASE}Handler as (
+  event: APIGatewayProxyEventV2,
+) => Promise<APIGatewayProxyStructuredResultV2>;
+
+describe('${CAMEL_CASE}Handler', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = {
+      ...originalEnv,
+      DB_CLUSTER_ARN: 'arn:aws:rds:cluster',
+      DB_SECRET_ARN: 'arn:aws:secretsmanager:secret',
+      DB_NAME: 'testdb',
+    };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  const createMockEvent = (): Partial<APIGatewayProxyEventV2> => ({
+    pathParameters: {},
+    queryStringParameters: {},
+    headers: {},
+  });
+
+  it('should return 200 with success response', async () => {
+    const event = createMockEvent();
+    const result = await handler(event as APIGatewayProxyEventV2);
+
+    expect(result.statusCode).toBe(200);
+    const body = JSON.parse(result.body as string);
+    expect(body.success).toBe(true);
+  });
+
+  it('should return 500 on error', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockSend.mockRejectedValueOnce(new Error('Database error'));
+
+    // TODO: Trigger error condition based on your implementation
+    // For now, this test is a placeholder
+
+    consoleSpy.mockRestore();
+  });
+
+  // TODO: Add more tests based on your implementation
+});
+EOF
+
 # Create Terraform configuration
 echo -e "${GREEN}✓${NC} Creating Terraform configuration..."
 cat > "$PROJECT_ROOT/infrastructure/lambda-$LAMBDA_NAME.tf" << EOF
 # Lambda function
 resource "aws_lambda_function" "${SNAKE_CASE}_lambda" {
   filename         = "../dist/services/$LAMBDA_NAME/$LAMBDA_NAME.zip"
-  function_name    = "carousel-$LAMBDA_NAME"
-  role             = aws_iam_role.lambda_organization_execution_role.arn
+  function_name    = "\${var.service_name}-$LAMBDA_NAME"
+  role             = aws_iam_role.lambda_execution_role.arn
   handler          = "$LAMBDA_NAME.handler"
   runtime          = local.node_runtime
   source_code_hash = filebase64sha256("../dist/services/$LAMBDA_NAME/$LAMBDA_NAME.zip")
@@ -330,7 +423,9 @@ echo ""
 echo -e "${GREEN}Created files:${NC}"
 echo -e "  📁 src/services/$LAMBDA_NAME/"
 echo -e "  📄   ├── $LAMBDA_NAME.handler.ts"
-echo -e "  📄   └── $LAMBDA_NAME.ts"
+echo -e "  📄   ├── $LAMBDA_NAME.handler.test.ts"
+echo -e "  📄   ├── $LAMBDA_NAME.ts"
+echo -e "  📄   └── $LAMBDA_NAME.test.ts"
 echo -e "  📄 infrastructure/lambda-$LAMBDA_NAME.tf"
 
 if [[ "$ADD_ROUTE" =~ ^[Yy]$ ]]; then
@@ -342,20 +437,28 @@ echo -e "${YELLOW}Next steps:${NC}"
 echo -e "  1. Implement your lambda logic in:"
 echo -e "     ${BLUE}src/services/$LAMBDA_NAME/$LAMBDA_NAME.ts${NC}"
 echo ""
+echo -e "  2. Add tests for your implementation in:"
+echo -e "     ${BLUE}src/services/$LAMBDA_NAME/$LAMBDA_NAME.test.ts${NC}"
+echo ""
 
 if [[ ! "$ADD_ROUTE" =~ ^[Yy]$ ]]; then
-  echo -e "  2. Add the API Gateway route in:"
+  echo -e "  3. Add the API Gateway route in:"
   echo -e "     ${BLUE}infrastructure/routes.tf${NC}"
   echo -e "     Example:"
   echo -e "     ${GREEN}\"GET /your-route\" = aws_lambda_function.${SNAKE_CASE}_lambda${NC}"
   echo ""
-  STEP_NUM=3
+  STEP_NUM=4
 else
-  STEP_NUM=2
+  STEP_NUM=3
 fi
 
+echo -e "  $STEP_NUM. Run tests:"
+echo -e "     ${BLUE}pnpm test${NC}"
+echo ""
+
+STEP_NUM=$((STEP_NUM + 1))
 echo -e "  $STEP_NUM. Build and package:"
-echo -e "     ${BLUE}npm run package${NC}"
+echo -e "     ${BLUE}pnpm run package${NC}"
 echo ""
 
 STEP_NUM=$((STEP_NUM + 1))

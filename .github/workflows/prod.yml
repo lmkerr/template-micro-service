@@ -44,7 +44,7 @@ jobs:
         with:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ secrets.CICD_ASSUMED_ROLE_ARN }}
-          role-session-name: GitHubActionsDeveloperOrganizationServiceProdSession
+          role-session-name: GitHubActionsDeployProdSession
           role-duration-seconds: 3600 # Optional: Adjust the session duration if needed
 
       - name: Install TFLint

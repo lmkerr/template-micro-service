@@ -1,7 +1,7 @@
 {
-  "name": "carousel_organization_service",
+  "name": "microservice-template",
   "version": "1.0.0",
-  "description": "Carousel Esports Organization Service",
+  "description": "Template for building serverless microservices with AWS Lambda and PostgreSQL",
   "scripts": {
     "build": "node ./scripts/esbuild.config.js",
     "tsc": "tsc --noEmit",
@@ -11,14 +11,13 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "zip": "node ./scripts/zip.config.js",
-    "migrate:logos": "node scripts/migrate-logos-to-cdn.mjs",
     "update-readme": "node scripts/update-readme-structure.mjs",
     "prepare": "husky"
   },
   "keywords": [
-    "carousel",
-    "organization",
-    "service",
+    "microservice",
+    "template",
+    "serverless",
     "terraform",
     "aws",
     "lambda",

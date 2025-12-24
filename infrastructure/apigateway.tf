@@ -1,28 +1,56 @@
-module "organization_api_gateway" {
-  source  = "CarouselGG/api-gateway-module/aws"
-  version = "0.4.5"
+module "api_gateway" {
+  # Replace with your API Gateway module source
+  # Example: "terraform-aws-modules/apigateway-v2/aws" or your own module
+  source  = "terraform-aws-modules/apigateway-v2/aws"
+  version = "~> 2.0"
 
-  api_name              = "carousel-organization-api"
-  api_description       = "API Gateway for Carousel Organization Service"
-  api_stage_name        = "v1"
-  api_stage_description = "Stage for Carousel Organization Service"
+  name          = "${var.service_name}-api"
+  description   = "API Gateway for ${var.service_name}"
+  protocol_type = "HTTP"
 
-  aws_region = var.region
-
-  # Logging Configuration
-  log_retention_in_days = 14
-  log_role_name         = "api_gateway_organization_cloudwatch_role"
-
-  # Observability
-  enable_dashboards      = true
-  enable_lambda_insights = true
-  enable_alarms          = true
-  create_sns_topic       = true
-
-  # Route Configuration
-  routes = local.routes
+  cors_configuration = {
+    allow_headers = ["content-type", "authorization"]
+    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_origins = ["*"]
+  }
 
   # Custom Domain Configuration
-  custom_domain_name = var.domain_base[terraform.workspace]
-  hosted_zone_id     = var.hosted_zone_id[terraform.workspace]
+  domain_name                 = var.domain_base[terraform.workspace]
+  domain_name_certificate_arn = aws_acm_certificate.api.arn
+
+  # Route Configuration - integrations with Lambda functions
+  integrations = {
+    for route, lambda in local.routes : route => {
+      lambda_arn             = lambda.arn
+      payload_format_version = "2.0"
+    }
+  }
+
+  tags = {
+    Service     = var.service_name
+    Environment = terraform.workspace
+  }
+}
+
+# ACM Certificate for custom domain
+resource "aws_acm_certificate" "api" {
+  domain_name       = var.domain_base[terraform.workspace]
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Route 53 record for API Gateway custom domain
+resource "aws_route53_record" "api" {
+  zone_id = var.hosted_zone_id[terraform.workspace]
+  name    = var.domain_base[terraform.workspace]
+  type    = "A"
+
+  alias {
+    name                   = module.api_gateway.apigatewayv2_domain_name_target_domain_name
+    zone_id                = module.api_gateway.apigatewayv2_domain_name_hosted_zone_id
+    evaluate_target_health = false
+  }
 }

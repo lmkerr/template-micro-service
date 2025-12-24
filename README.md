@@ -37,7 +37,6 @@ A template for building serverless microservices using AWS Lambda, API Gateway, 
 │   └── variables.tf
 ├── scripts/
 │   ├── esbuild.config.js
-│   ├── migrate-logos-to-cdn.mjs
 │   ├── scaffold-lambda.sh
 │   ├── update-readme-structure.mjs
 │   └── zip.config.js
@@ -212,7 +211,48 @@ Each environment should have the secrets configured above. You can also add envi
 
 ## Customization
 
+### Initial Setup
+
+1. **Set up Terraform state backend** - Terraform stores infrastructure state remotely in S3, enabling team collaboration and state locking. This follows a **hub-and-spoke pattern**: one central S3 bucket and DynamoDB table can serve multiple microservices, with each service using a unique state key path.
+
+   ```bash
+   # Create S3 bucket for state (one-time setup, shared across all services)
+   aws s3api create-bucket --bucket your-terraform-state-bucket --region us-west-2 \
+     --create-bucket-configuration LocationConstraint=us-west-2
+   aws s3api put-bucket-versioning --bucket your-terraform-state-bucket \
+     --versioning-configuration Status=Enabled
+
+   # Create DynamoDB table for state locking (one-time setup, shared across all services)
+   aws dynamodb create-table --table-name your-terraform-lock-table \
+     --attribute-definitions AttributeName=LockID,AttributeType=S \
+     --key-schema AttributeName=LockID,KeyType=HASH \
+     --billing-mode PAY_PER_REQUEST \
+     --region us-west-2
+   ```
+
+2. **Update `infrastructure/main.tf`** with your bucket name and a unique state key for this service (e.g., `my-service/terraform.tfstate`)
+
+3. **Set up Aurora Serverless database** and create SSM parameters:
+
+   ```bash
+   # After creating your Aurora Serverless cluster, store the connection info in SSM
+   aws ssm put-parameter --name "/database/dev/cluster-arn" \
+     --value "arn:aws:rds:us-west-2:ACCOUNT:cluster:your-cluster" --type String
+   aws ssm put-parameter --name "/database/dev/secret-arn" \
+     --value "arn:aws:secretsmanager:us-west-2:ACCOUNT:secret:your-secret" --type String
+   aws ssm put-parameter --name "/database/dev/database-name" \
+     --value "your_database_name" --type String
+   ```
+
+4. **Update `infrastructure/variables.tf`** with your:
+   - `service_name` - Name for your service
+   - `domain_base` - Your API domain per environment
+   - `roles` - IAM role ARNs for CI/CD
+   - `hosted_zone_id` - Route 53 hosted zone IDs
+
+### Code Customization
+
 1. Rename "thing" to your entity name throughout the codebase
 2. Update the `Thing` interface in `src/models/interfaces/thing.type.ts`
 3. Modify the SQL queries in each handler to match your schema
-4. Update Terraform variables for your domain and environment
+4. Use `./scripts/scaffold-lambda.sh` to add new Lambda functions

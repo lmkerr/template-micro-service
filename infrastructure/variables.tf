@@ -1,3 +1,9 @@
+variable "service_name" {
+  description = "Name of the service (used for resource naming)"
+  type        = string
+  default     = "my-service"
+}
+
 variable "region" {
   description = "AWS Region"
   type        = string
@@ -5,12 +11,12 @@ variable "region" {
 }
 
 variable "domain_base" {
-  description = "Base domain name for the API Gateway"
+  description = "Base domain name for the API Gateway per environment"
   type        = map(string)
   default = {
-    sandbox = "thing.api.sandbox.carousel.gg"
-    dev     = "thing.api.dev.carousel.gg"
-    prod    = "thing.api.prod.carousel.gg"
+    sandbox = "api.sandbox.example.com"
+    dev     = "api.dev.example.com"
+    prod    = "api.example.com"
   }
 }
 
@@ -18,19 +24,19 @@ variable "roles" {
   description = "Role ARNs for Terraform to assume to deploy to different AWS accounts"
   type        = map(any)
   default = {
-    sandbox = "arn:aws:iam::423623857147:role/cicd"
-    dev     = "arn:aws:iam::891376939351:role/cicd"
-    prod    = "arn:aws:iam::905418365150:role/cicd"
+    sandbox = "arn:aws:iam::ACCOUNT_ID:role/cicd"
+    dev     = "arn:aws:iam::ACCOUNT_ID:role/cicd"
+    prod    = "arn:aws:iam::ACCOUNT_ID:role/cicd"
   }
 }
 
 variable "hosted_zone_id" {
-  description = "Hosted Zone ID"
+  description = "Route 53 Hosted Zone ID per environment"
   sensitive   = true
   type        = map(string)
   default = {
-    sandbox = "Z00696811AZY8I5RSTK1I"
-    dev     = "Z003215133IY7CUXBSS4K"
-    prod    = "Z08507002AVLMBJGWHVCM"
+    sandbox = "HOSTED_ZONE_ID"
+    dev     = "HOSTED_ZONE_ID"
+    prod    = "HOSTED_ZONE_ID"
   }
 }
