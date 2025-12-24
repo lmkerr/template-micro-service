@@ -1,0 +1,75 @@
+name: Terraform Plan for Feature Branches
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write # Necessary for OIDC
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run lint
+        run: pnpm run lint
+
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
+
+      - name: Package application
+        run: pnpm run package
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: ${{ secrets.CICD_ASSUMED_ROLE_ARN }}
+          role-session-name: GitHubActionsDeveloperFeatureBranchSession
+          role-duration-seconds: 3600 # Optional: Adjust the session duration if needed
+
+      - name: Install TFLint
+        run: |
+          wget https://github.com/terraform-linters/tflint/releases/download/v0.50.3/tflint_linux_amd64.zip
+          unzip tflint_linux_amd64.zip
+          sudo mv tflint /usr/local/bin
+
+      - name: Run TFLint
+        run: tflint
+        working-directory: infrastructure
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Initialize Terraform
+        run: terraform init
+        working-directory: infrastructure
+
+      - name: Select Terraform workspace
+        run: terraform workspace select dev || terraform workspace new dev && terraform workspace select dev
+        working-directory: infrastructure
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: infrastructure
