@@ -16,10 +16,11 @@ A template for building serverless microservices using AWS Lambda, API Gateway, 
 ├── .claude/
 │   └── settings.local.json
 ├── .github/
-│   └── workflows/
-│       ├── develop.yml
-│       ├── feature.yml
-│       └── prod.yml
+│   ├── workflows/
+│   │   ├── develop.yml
+│   │   ├── feature.yml
+│   │   └── prod.yml
+│   └── CODEOWNERS
 ├── .vscode/
 │   └── settings.json
 ├── infrastructure/
