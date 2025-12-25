@@ -69,9 +69,12 @@ describe('responseLogger', () => {
 
     await responseLogger(response as Parameters<typeof responseLogger>[0]);
 
-    expect(consoleWarnSpy).toHaveBeenCalledWith('Unexpected response structure:', {
-      unexpected: 'structure',
-    });
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Unexpected response structure:',
+      {
+        unexpected: 'structure',
+      },
+    );
   });
 
   it('should handle invalid JSON body gracefully', async () => {

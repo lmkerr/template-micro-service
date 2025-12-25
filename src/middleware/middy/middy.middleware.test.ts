@@ -81,7 +81,9 @@ describe('handlerMiddleware', () => {
     const result = await wrappedHandler(event, context);
 
     expect(mockHandler).toHaveBeenCalled();
-    expect((result as APIGatewayProxyResultV2 & { statusCode: number }).statusCode).toBe(200);
+    expect(
+      (result as APIGatewayProxyResultV2 & { statusCode: number }).statusCode,
+    ).toBe(200);
   });
 
   it('should add content-type header when not present', async () => {
@@ -95,7 +97,9 @@ describe('handlerMiddleware', () => {
     const context = createMockContext();
 
     const result = await wrappedHandler(event, context);
-    const typedResult = result as APIGatewayProxyResultV2 & { headers?: Record<string, string> };
+    const typedResult = result as APIGatewayProxyResultV2 & {
+      headers?: Record<string, string>;
+    };
 
     expect(typedResult.headers?.['content-type']).toBe('application/json');
   });
@@ -112,7 +116,9 @@ describe('handlerMiddleware', () => {
     const context = createMockContext();
 
     const result = await wrappedHandler(event, context);
-    const typedResult = result as APIGatewayProxyResultV2 & { headers?: Record<string, string> };
+    const typedResult = result as APIGatewayProxyResultV2 & {
+      headers?: Record<string, string>;
+    };
 
     expect(typedResult.headers?.['content-type']).toBe('text/plain');
   });
@@ -129,7 +135,9 @@ describe('handlerMiddleware', () => {
     const context = createMockContext();
 
     const result = await wrappedHandler(event, context);
-    const typedResult = result as APIGatewayProxyResultV2 & { headers?: Record<string, string> };
+    const typedResult = result as APIGatewayProxyResultV2 & {
+      headers?: Record<string, string>;
+    };
 
     expect(typedResult.headers?.['Content-Type']).toBe('text/html');
   });

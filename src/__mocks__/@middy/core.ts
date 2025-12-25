@@ -45,7 +45,9 @@ const middy = (handler: (...args: unknown[]) => unknown): MiddyHandler => {
   };
 
   // Make the handler chainable by adding use and onError methods
-  (middyHandler as MiddyHandler).use = (middleware: MiddlewareObj): MiddyHandler => {
+  (middyHandler as MiddyHandler).use = (
+    middleware: MiddlewareObj,
+  ): MiddyHandler => {
     middlewares.push(middleware);
     return middyHandler as MiddyHandler;
   };

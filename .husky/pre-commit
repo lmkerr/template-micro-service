@@ -4,5 +4,8 @@ pnpm run update-readme
 # Stage README if it was modified
 git add README.md
 
+# Lint code
+pnpm lint
+
 # Run tests
 pnpm test

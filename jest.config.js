@@ -14,7 +14,8 @@ export default {
   },
   moduleNameMapper: {
     '^@middy/core$': '<rootDir>/src/__mocks__/@middy/core.ts',
-    '^@middy/http-header-normalizer$': '<rootDir>/src/__mocks__/@middy/http-header-normalizer.ts',
+    '^@middy/http-header-normalizer$':
+      '<rootDir>/src/__mocks__/@middy/http-header-normalizer.ts',
   },
   collectCoverageFrom: [
     'src/**/*.ts',
